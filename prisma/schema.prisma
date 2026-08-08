@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  users     User[]
+  sites     Site[]
+}
+
+model Site {
+  id             String       @id @default(cuid())
+  name           String
+  location       String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  obligations    Obligation[]
+}
+
+model User {
+  id             String        @id @default(cuid())
+  email          String        @unique
+  name           String?
+  passwordHash   String?
+  role           String        @default("EMPLOYEE") // FOUNDER, MD, COMPLIANCE_HEAD, PLANT_HEAD, EMPLOYEE
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  ownedObligations Obligation[] @relation("Owner")
+}
+
+model Obligation {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  category    String    // LICENCE, INSPECTION, RETURN, TRAINING
+  dueDate     DateTime
+  status      String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, OVERDUE
+  siteId      String
+  site        Site      @relation(fields: [siteId], references: [id])
+  ownerId     String?
+  owner       User?     @relation("Owner", fields: [ownerId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
